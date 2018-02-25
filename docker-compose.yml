@@ -1,0 +1,11 @@
+version: "2"
+services:
+  app:
+    container_name: app
+    restart: always
+    build: .
+    ports:
+      - "3000:3000"
+    command: npm run start.watch
+    volumes:
+      - $PWD:/usr/src/app
