@@ -42,3 +42,16 @@ exports.list = () => {
         'pk'
     ]
 }
+
+exports.listOrigin = () => {
+    return {
+        FR : {
+            locale: 'fr_FR',
+            currency: 'EUR'
+        },
+        US : {
+            locale: 'en_US',
+            currency: 'USD'
+        }
+    }
+}
