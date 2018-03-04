@@ -15,6 +15,18 @@ exports.insert = (collectionName, element, callback) => {
     });
 }
 
+exports.findAll = (collectionName, query, sort, callback) => {
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db(dbName);
+        dbo.collection(collectionName).find(query).sort(sort).toArray(function(err, result) {
+            if (err) throw err;
+            callback(result)
+            db.close();
+        });
+    });
+}
+
 exports.findOne = (collectionName, query, callback) => {
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
@@ -58,7 +70,7 @@ exports.insertSteamHistory = (data) => {
 
 exports.insertOriginHistory = (data) => {
     data.forEach(element => {
-        exports.findLastBy('history', {game: ObjectId(element.game), currency: element.currency}, {timestamp: 1}, (lastHistory) => {
+        exports.findLastBy('history', {game: ObjectId(element.game), currency: element.currency}, {timestamp: -1}, (lastHistory) => {
             if (!lastHistory) {
                 exports.insert('history', element, (res) => {})
                 return
