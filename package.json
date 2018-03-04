@@ -17,6 +17,8 @@
   "scripts": {
     "start": "node public/index.js",
     "start.watch": "nodemon public/index.js",
+    "db.migrate": "node db/migrations/structure.js",
+    "run": "node scripts/run.js",
     "test": "npm test"
   },
   "repository": {

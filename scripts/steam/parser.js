@@ -7,8 +7,8 @@ exports.parseAll = (elements, currency, game) => {
         let obj = {}
 
         if (elements.final[key]) {
+            obj['initialPrice'] = elements.final[key][1]
             obj['finalPrice'] = elements.final[key][1]
-            obj['initialPrice'] = obj['finalPrice']
         }
 
         if (elements.initial[key]) {
@@ -16,8 +16,8 @@ exports.parseAll = (elements, currency, game) => {
         }
 
         obj['currency'] = currency
-        obj['timestamp'] = timestamp.slice(0, -3)
         obj['discount'] = data.discount
+        obj['timestamp'] = timestamp.slice(0, -3)
         obj['game'] = game._id
 
         result.push(obj);

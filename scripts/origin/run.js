@@ -35,43 +35,43 @@ async function fetchOffer(gameUrl, callback) {
     const status = await page.open(gameUrl);
 };
 
-Object.entries(db).forEach(element => {
-    let gameRef = element[0]
-    let gameUrls = element[1]
+exports.run = () => {
+    console.info('Starting origin run')
+    Object.entries(db).forEach(element => {
+        let gameRef = element[0]
+        let gameUrls = element[1]
 
-    let urls = []
-    gameUrls.forEach(gameUrl => {
-        fetchOffer(gameUrl, (offerUrl) => {
-            let dataUrl = URL.parse(offerUrl, true)
-            const offerId = dataUrl.query.offerIds.split(',')[0]
+        let urls = []
+        gameUrls.forEach(gameUrl => {
+            fetchOffer(gameUrl, (offerUrl) => {
+                let dataUrl = URL.parse(offerUrl, true)
+                const offerId = dataUrl.query.offerIds.split(',')[0]
 
-            Object.entries(currency.listOrigin()).forEach(dataCurrency => {
-                let country = dataCurrency[0]
-                dataUrl.query.country = dataCurrency[0]
-                dataUrl.query.locale = dataCurrency[1].locale
-                dataUrl.query.currency = dataCurrency[1].currency
-                dataUrl.query.offerIds = offerId
+                Object.entries(currency.listOrigin()).forEach(dataCurrency => {
+                    let country = dataCurrency[0]
+                    dataUrl.query.country = dataCurrency[0]
+                    dataUrl.query.locale = dataCurrency[1].locale
+                    dataUrl.query.currency = dataCurrency[1].currency
+                    dataUrl.query.offerIds = offerId
 
-                urls.push(
-                    dataUrl.protocol + '//' + dataUrl.host + dataUrl.pathname + '?' + querystring.stringify(dataUrl.query)
-                )
-            });
+                    urls.push(
+                        dataUrl.protocol + '//' + dataUrl.host + dataUrl.pathname + '?' + querystring.stringify(dataUrl.query)
+                    )
+                });
 
-            console.log(urls)
+                async.map(urls, fetch, (err, res) => {
+                    if (err) return console.log(err);
+                    handler.findOne('game', {name: gameRef}, (game) => {
+                        if (!game) {
+                            console.error(gameRef + ' not found')
+                            return
+                        }
 
-            async.map(urls, fetch, (err, res) => {
-                if (err) return console.log(err);
-                handler.findOne('game', {name: gameRef}, (game) => {
-                    console.log(game)
-                    if (!game) {
-                        console.error(gameRef + ' not found')
-                        return
-                    }
-
-                    let data = parser.parseAll(res, game)
-                    handler.insertOriginHistory(data)
+                        let data = parser.parseAll(res, game)
+                        handler.insertOriginHistory(data)
+                    })
                 })
-            })
-        })   
+            })   
+        })
     })
-});
+}

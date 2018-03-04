@@ -48,9 +48,7 @@ exports.insertSteamHistory = (data) => {
             dbo.collection('history').findOne(element, function(err, res) {
                 if (err) throw err;
                 if (!res) {
-                    exports.insert('history', element, (res) => {
-                        console.log(res)
-                    })
+                    exports.insert('history', element, (res) => {})
                 }
                 db.close();
             });

@@ -20,46 +20,45 @@ const fetch = (url, callback) => {
     })
 }
 
+exports.run = () => {
+    console.info('Starting steamdb run')
+    const baseUrl = 'https://steamdb.info/api/GetPriceHistory/'
+    Object.entries(db).forEach(element => {
+        let gameRef = element[0]
+        let gameUrls = element[1]
 
-const baseUrl = 'https://steamdb.info/api/GetPriceHistory/'
-Object.entries(db).forEach(element => {
-    let gameRef = element[0]
-    let gameUrls = element[1]
-
-    let urls = []
-    gameUrls.forEach(gameUrl => {
-        let id = gameUrl.match(/\d+/)[0]
-        
-        if (gameUrl.indexOf('app') > -1) {
-            currency.list().forEach(cc => {
-                urls.push(baseUrl + '?appid=' + id + '&cc=' + cc)
-            });
-            return
-        }
-
-        if (gameUrl.indexOf('sub') > -1) {
-            currency.list().forEach(cc => {
-                urls.push(baseUrl + '?subid=' + id + '&cc=' + cc)
-            });
-            return
-        }
-
-        console.log(gameUrl + ' : malformed url')
-    })
-
-    async.map(urls, fetch, (err, res) => {
-        if (err) return console.log(err);
-        handler.findOne('game', {name: gameRef}, (game) => {
-            console.log(game)
-            if (!game) {
-                console.error(gameRef + ' not found')
+        let urls = []
+        gameUrls.forEach(gameUrl => {
+            let id = gameUrl.match(/\d+/)[0]
+            
+            if (gameUrl.indexOf('app') > -1) {
+                currency.listSteam().forEach(cc => {
+                    urls.push(baseUrl + '?appid=' + id + '&cc=' + cc)
+                });
                 return
             }
-            
-            let data = parser.parseAll(res[0].data, 'jp', game)
-            handler.insertSteamHistory(data)
+
+            if (gameUrl.indexOf('sub') > -1) {
+                currency.listSteam().forEach(cc => {
+                    urls.push(baseUrl + '?subid=' + id + '&cc=' + cc)
+                });
+                return
+            }
+
+            console.log(gameUrl + ' : malformed url')
         })
-    })
-});
 
+        async.map(urls, fetch, (err, res) => {
+            if (err) return console.log(err);
+            handler.findOne('game', {name: gameRef}, (game) => {
+                if (!game) {
+                    console.error(gameRef + ' not found')
+                    return
+                }
 
+                let data = parser.parseAll(res[0].data, 'jp', game)
+                handler.insertSteamHistory(data)
+            })
+        })
+    });
+}
