@@ -1,27 +1,38 @@
-exports.parseAll = (elements, currency, game) => {
+exports.parseAll = (elements, game) => {
     let result = []
+    
 
-    Object.entries(elements.formatted).forEach((value, key) => {
-        let timestamp = value[0]
-        let data = value[1]
-        let obj = {}
-
-        if (elements.final[key]) {
-            obj['initialPrice'] = elements.final[key][1]
-            obj['finalPrice'] = elements.final[key][1]
+    elements.forEach(element => {
+        if (element.data === undefined) {
+            console.error("Error on element " + JSON.stringify(element))
+            return
+        }
+        if (element.data.formatted.length === 0) {
+            return
         }
 
-        if (elements.initial[key]) {
-            obj['initialPrice'] = elements.initial[key][1]
-        }
+        Object.entries(element.data.formatted).forEach((value, key) => {
+            let timestamp = value[0]
+            let data = value[1]
+            let obj = {}
 
-        obj['currency'] = currency
-        obj['discount'] = data.discount
-        obj['timestamp'] = timestamp.slice(0, -3)
-        obj['game'] = game._id
+            if (element.data.final[key]) {
+                obj['initialPrice'] = element.data.final[key][1]
+                obj['finalPrice'] = element.data.final[key][1]
+            }
 
-        result.push(obj);
-    });
+            if (element.data.initial[key]) {
+                obj['initialPrice'] = element.data.initial[key][1]
+            }
+
+            obj['currency'] = element.currency
+            obj['discount'] = data.discount
+            obj['timestamp'] = timestamp.slice(0, -3)
+            obj['game'] = game._id
+
+            result.push(obj);
+        });
+    })
 
     return result
 }

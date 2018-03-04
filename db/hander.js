@@ -51,7 +51,7 @@ exports.findLastBy = (collectionName, query, sort, callback) => {
     });
 }
 
-exports.insertSteamHistory = (data) => {
+exports.insertSteamHistory = (data, callback) => {
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
         var dbo = db.db(dbName);
@@ -84,6 +84,7 @@ exports.insertOriginHistory = (data) => {
             if (JSON.stringify(lastHistory) != JSON.stringify(compare)) {
                 exports.insert('history', element, (res) => {})
             }
+            db.close();
         })
     })
 }
