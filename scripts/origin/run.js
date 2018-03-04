@@ -67,9 +67,9 @@ Object.entries(db).forEach(element => {
                         console.error(gameRef + ' not found')
                         return
                     }
-                    
+
                     let data = parser.parseAll(res, game)
-                    handler.insertHistory(data)
+                    handler.insertOriginHistory(data)
                 })
             })
         })   

@@ -1,4 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectId; 
 const url = "mongodb://localhost:27017/hubihubi";
 const dbName = 'hubihubi';
 
@@ -26,7 +27,19 @@ exports.findOne = (collectionName, query, callback) => {
     });
 }
 
-exports.insertHistory = (data) => {
+exports.findLastBy = (collectionName, query, sort, callback) => {
+    MongoClient.connect(url, function(err, db) {
+        if (err) throw err;
+        var dbo = db.db(dbName);
+        dbo.collection('history').find(query).sort(sort).toArray(function(err, result) {
+            if (err) throw err;
+            callback(result[0])
+            db.close();
+        });
+    });
+}
+
+exports.insertSteamHistory = (data) => {
     MongoClient.connect(url, function(err, db) {
         if (err) throw err;
         var dbo = db.db(dbName);
@@ -43,4 +56,24 @@ exports.insertHistory = (data) => {
             });
         });
     });
+}
+
+exports.insertOriginHistory = (data) => {
+    data.forEach(element => {
+        exports.findLastBy('history', {game: ObjectId(element.game), currency: element.currency}, {timestamp: 1}, (lastHistory) => {
+            if (!lastHistory) {
+                exports.insert('history', element, (res) => {})
+                return
+            }
+
+            let compare = JSON.parse(JSON.stringify(element));
+            delete compare.timestamp
+            delete lastHistory.timestamp
+            delete lastHistory._id
+
+            if (JSON.stringify(lastHistory) != JSON.stringify(compare)) {
+                exports.insert('history', element, (res) => {})
+            }
+        })
+    })
 }

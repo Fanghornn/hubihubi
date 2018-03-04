@@ -57,7 +57,7 @@ Object.entries(db).forEach(element => {
             }
             
             let data = parser.parseAll(res[0].data, 'jp', game)
-            handler.insertHistory(data)
+            handler.insertSteamHistory(data)
         })
     })
 });
