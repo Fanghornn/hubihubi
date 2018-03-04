@@ -1,9 +1,11 @@
 const http = require('http')
-const currency = require('../utils/currency')
-const db = require('./db/steamdb.json')
+const currency = require('../../utils/currency')
+const db = require('./db.json')
 const async = require('async')
 const request = require('request')
+const parser = require('./parser')
 var fs = require('fs');
+const handler = require('../../db/hander')
 
 const fetch = (url, callback) => {
     const options = {
@@ -47,7 +49,16 @@ Object.entries(db).forEach(element => {
 
     async.map(urls, fetch, (err, res) => {
         if (err) return console.log(err);
-        console.log(res)
+        handler.findOne('game', {name: gameRef}, (game) => {
+            console.log(game)
+            if (!game) {
+                console.error(gameRef + ' not found')
+                return
+            }
+            
+            let data = parser.parseAll(res[0].data, 'jp', game)
+            handler.insertHistory(data)
+        })
     })
 });
 

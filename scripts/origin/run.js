@@ -1,11 +1,12 @@
 const phantom = require('phantom');
 const URL = require('url')
-const db = require('./db/origindb.json')
-const currency = require('../utils/currency')
+const db = require('./db.json')
+const parser = require('./parser')
+const currency = require('../../utils/currency')
 const querystring = require('querystring');
 const async = require('async')
 const request = require('request')
-
+const handler = require('../../db/hander')
 
 const fetch = (url, callback) => {
     const options = {
@@ -24,7 +25,7 @@ async function fetchOffer(gameUrl, callback) {
     const instance = await phantom.create();
     const page = await instance.createPage();
     await page.on("onResourceRequested", function(requestData) {
-        console.info('Requesting', requestData.url)
+        //console.info('Requesting', requestData.url)
         if (requestData.url.indexOf('https://api4.origin.com/supercarp/rating/offers/anonymous') > -1) {
             instance.exit()
             callback(requestData.url)
@@ -60,7 +61,16 @@ Object.entries(db).forEach(element => {
 
             async.map(urls, fetch, (err, res) => {
                 if (err) return console.log(err);
-                console.log(res)
+                handler.findOne('game', {name: gameRef}, (game) => {
+                    console.log(game)
+                    if (!game) {
+                        console.error(gameRef + ' not found')
+                        return
+                    }
+                    
+                    let data = parser.parseAll(res, game)
+                    handler.insertHistory(data)
+                })
             })
         })   
     })
