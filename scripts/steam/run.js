@@ -7,7 +7,7 @@ const parser = require('./parser')
 const handler = require('../../db/hander')
 const sleep = require('sleep');
 
-const fetch = (url, callback) => {
+const fetch = (url, callback) => new Promise((resolve) => {
     const options = {
         url: url,
         json: true,
@@ -15,13 +15,18 @@ const fetch = (url, callback) => {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Safari/537.36'
         }
     };
-    console.log('fetch '+url)
+
     request(options, (err, res, body) => {
         console.log('response fetched ' + url)
         body.currency = currency.listSteam()[url.split('&cc=')[1]] //inject custom currency in response
         callback(err, body)
+        
+        setTimeout(() => {
+            console.log('Game fetch proceeded, another one can be triggered')
+            resolve()
+        }, 2000)
     })
-}
+})
 
 const getUrls = (gameUrls) => {
     const baseUrl = 'https://steamdb.info/api/GetPriceHistory/'
@@ -49,11 +54,13 @@ const getUrls = (gameUrls) => {
     return urls
 }
 
-exports.run = (offset) => {
-    console.info('Starting steamdb run')
-
+function createSteamRunner(offset) {
     var count = 0;
-    Object.entries(db).forEach(element => {
+    
+    console.info('\nStarting steamdb run\n')
+
+    const gameProcesses = Object.entries(db).map(element => new Promise((resolve) => {
+
         count++;
         if (count < offset || count > offset + 10) {
             return
@@ -63,24 +70,42 @@ exports.run = (offset) => {
         let gameUrls = element[1]
 
         console.log(gameRef)
+
         let urls = getUrls(gameUrls).slice(offset, 10)
-        
+
         async.map(urls, fetch, (err, res) => {
+            let resolveLater = false;
+
             console.log('response are here !')
-            if (err) return console.log(err);
-            handler.findOne('game', {name: gameRef}, (game) => {
-                console.log(gameRef)
-                if (!game) {
-                    handler.insert('game', {name: gameRef}, (game) => {
-                        let data = parser.parseAll(res, game)
-                        handler.insertSteamHistory(data)
-                        return
-                    })
-                    return
-                }
-                let data = parser.parseAll(res, game)
-                handler.insertSteamHistory(data, () => {})
-            })
+
+            if (err) return reject(console.log(err));
+
+            try {
+                handler.findOne('game', {name: gameRef}, (game) => {
+                    console.log(gameRef)
+    
+                    if (!game) {
+                        return handler.insert('game', {name: gameRef}, (game) => {
+                            let data = parser.parseAll(res, game)
+                            handler.insertSteamHistory(data, resolve)
+                            
+                            resolve()
+                        })
+                    }
+
+                    let data = parser.parseAll(res, game)
+                    handler.insertSteamHistory(data)
+
+                    resolve()
+                })
+            } catch (error) {
+                reject(new Error(error))
+            }
         })
-    });
+    }))
+
+    return Promise.all(gameProcesses)
 }
+
+// Returns a promise which resolves when steam runner ended or failed
+exports.run = (offset) => createSteamRunner(offset)
